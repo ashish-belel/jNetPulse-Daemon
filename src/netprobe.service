@@ -1,0 +1,14 @@
+[Unit]
+Description=Java Network Observability Daemon
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/netprobe
+ExecStart=/usr/bin/java NetProbe
+Restart=on-failure
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
