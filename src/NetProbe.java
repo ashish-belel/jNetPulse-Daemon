@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class NetProbe {
     private static final Logger logger = Logger.getLogger("NetProbe");
@@ -17,20 +20,26 @@ public class NetProbe {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        FileHandler fh = new FileHandler(LOG_FILE, true);
-        fh.setFormatter(new SimpleFormatter());
-        logger.addHandler(fh);
-        logger.setUseParentHandlers(false);
+    public static void main(String[] args) {
+        try {
+            FileHandler fh = new FileHandler(LOG_FILE, true);
+            fh.setFormatter(new SimpleFormatter());
+            logger.addHandler(fh);
+            logger.setUseParentHandlers(false);
+        } catch (Exception e) {
+            return;
+        }
 
         List<Target> targets = Arrays.asList(
             new Target("8.8.8.8", 53, "Google DNS"),
             new Target("github.com", 443, "GitHub Web")
         );
 
-        logger.info("Daemon started.");
+        logger.info("Network Observability Daemon Started.");
 
-        while (true) {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        
+        Runnable probeTask = () -> {
             for (Target t : targets) {
                 long start = System.currentTimeMillis();
                 try (Socket socket = new Socket()) {
@@ -41,7 +50,8 @@ public class NetProbe {
                     logger.severe(String.format("[DOWN] %s is UNREACHABLE.", t.name));
                 }
             }
-            Thread.sleep(60000);
-        }
+        };
+
+        scheduler.scheduleAtFixedRate(probeTask, 0, 60, TimeUnit.SECONDS);
     }
 }
