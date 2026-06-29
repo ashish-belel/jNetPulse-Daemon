@@ -1,0 +1,11 @@
+# Compiled class file
+*.class
+
+# Log files
+*.log
+/var/log/
+
+# IDE directories
+.vscode/
+.idea/
+*.iml
