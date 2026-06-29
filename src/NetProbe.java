@@ -2,8 +2,14 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class NetProbe {
+    private static final Logger logger = Logger.getLogger("NetProbe");
+    private static final String LOG_FILE = "/var/log/net_probe.log";
+
     static class Target {
         String host; int port; String name;
         Target(String host, int port, String name) {
@@ -11,13 +17,18 @@ public class NetProbe {
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws Exception {
+        FileHandler fh = new FileHandler(LOG_FILE, true);
+        fh.setFormatter(new SimpleFormatter());
+        logger.addHandler(fh);
+        logger.setUseParentHandlers(false);
+
         List<Target> targets = Arrays.asList(
             new Target("8.8.8.8", 53, "Google DNS"),
             new Target("github.com", 443, "GitHub Web")
         );
 
-        System.out.println("Starting network probe...");
+        logger.info("Daemon started.");
 
         while (true) {
             for (Target t : targets) {
@@ -25,9 +36,9 @@ public class NetProbe {
                 try (Socket socket = new Socket()) {
                     socket.connect(new InetSocketAddress(t.host, t.port), 3000);
                     long latency = System.currentTimeMillis() - start;
-                    System.out.printf("[UP] %s is reachable. Latency: %d ms%n", t.name, latency);
+                    logger.info(String.format("[UP] %s is reachable. Latency: %d ms", t.name, latency));
                 } catch (Exception e) {
-                    System.out.printf("[DOWN] %s is UNREACHABLE.%n", t.name);
+                    logger.severe(String.format("[DOWN] %s is UNREACHABLE.", t.name));
                 }
             }
             Thread.sleep(60000);
